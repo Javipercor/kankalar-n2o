@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -19,6 +20,8 @@ internal static class Program
     {
         using var mutex = new Mutex(true, @"Local\N2O.Windows", out bool first);
         if (!first) return;
+        CultureInfo.DefaultThreadCurrentCulture = CultureInfo.GetCultureInfo("en-US");
+        CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.GetCultureInfo("en-US");
         ApplicationConfiguration.Initialize();
         Application.Run(new TrayApp());
     }
@@ -36,9 +39,9 @@ internal sealed class TrayApp : ApplicationContext
         var icon = new Icon(stream);
         panel.Icon = icon;
         var menu = new ContextMenuStrip();
-        menu.Items.Add("Abrir N₂O", null, (_, _) => Open());
-        menu.Items.Add("Salir", null, (_, _) => ExitThread());
-        tray = new NotifyIcon { Icon = icon, Text = "N₂O · Memoria GPU Intel", Visible = true, ContextMenuStrip = menu };
+        menu.Items.Add("Open N₂O", null, (_, _) => Open());
+        menu.Items.Add("Quit", null, (_, _) => ExitThread());
+        tray = new NotifyIcon { Icon = icon, Text = "N₂O · Intel GPU Memory", Visible = true, ContextMenuStrip = menu };
         tray.MouseClick += (_, e) => { if (e.Button == MouseButtons.Left) Open(); };
         Open();
     }
@@ -48,19 +51,19 @@ internal sealed class TrayApp : ApplicationContext
 
 internal sealed class MainForm : Form
 {
-    readonly Label hardware = new() { AutoSize = true, MaximumSize = new Size(450, 0), Text = "Consultando hardware…" };
-    readonly Label value = new() { AutoSize = true, Font = new Font("Segoe UI", 26, FontStyle.Bold), Text = "Sin conectar" };
-    readonly Label status = new() { AutoSize = true, MaximumSize = new Size(450, 0), Text = "Abre Intel Graphics Software y entra en Shared GPU Memory Override. Después pulsa Conectar." };
-    readonly TrackBar slider = new() { Minimum = 0, Maximum = 100, TickFrequency = 10, Width = 440, Enabled = false, AccessibleName = "Porcentaje de memoria compartida GPU" };
-    readonly Button send = new() { Text = "Enviar selección a Intel", AutoSize = true, Enabled = false };
-    readonly Button connect = new() { Text = "Conectar con Intel", AutoSize = true };
-    readonly Button balanced = new() { Text = "57 % · Referencia Intel", AutoSize = true, Enabled = false };
+    readonly Label hardware = new() { AutoSize = true, MaximumSize = new Size(450, 0), Text = "Checking hardware…" };
+    readonly Label value = new() { AutoSize = true, Font = new Font("Segoe UI", 26, FontStyle.Bold), Text = "Not connected" };
+    readonly Label status = new() { AutoSize = true, MaximumSize = new Size(450, 0), Text = "Open Intel Graphics Software and go to Shared GPU Memory Override. Then click Connect to Intel." };
+    readonly TrackBar slider = new() { Minimum = 0, Maximum = 100, TickFrequency = 10, Width = 440, Enabled = false, AccessibleName = "Shared GPU memory percentage" };
+    readonly Button send = new() { Text = "Send selection to Intel", AutoSize = true, Enabled = false };
+    readonly Button connect = new() { Text = "Connect to Intel", AutoSize = true };
+    readonly Button balanced = new() { Text = "57% · Intel default", AutoSize = true, Enabled = false };
     IntelControl? control;
     double ramGB;
 
     public MainForm()
     {
-        Text = "N₂O · Memoria GPU Intel";
+        Text = "N₂O · Intel GPU Memory";
         ClientSize = new Size(510, 610);
         AutoScaleMode = AutoScaleMode.Dpi;
         FormBorderStyle = FormBorderStyle.FixedSingle;
@@ -69,20 +72,20 @@ internal sealed class MainForm : Form
         var layout = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(26) };
         layout.Controls.Add(new Label { Text = "N₂O", Font = new Font("Segoe UI", 24, FontStyle.Bold), AutoSize = true });
         layout.Controls.Add(hardware);
-        layout.Controls.Add(new Label { Text = "MEMORIA COMPARTIDA · CONEXIÓN EXPERIMENTAL", AutoSize = true, Margin = new Padding(0, 22, 0, 8) });
+        layout.Controls.Add(new Label { Text = "SHARED MEMORY · EXPERIMENTAL CONNECTION", AutoSize = true, Margin = new Padding(0, 22, 0, 8) });
         layout.Controls.Add(value);
         layout.Controls.Add(slider);
         layout.Controls.Add(balanced);
         layout.Controls.Add(connect);
         layout.Controls.Add(send);
         layout.Controls.Add(status);
-        var help = new LinkLabel { Text = "Abrir Intel Graphics Software", AutoSize = true, Margin = new Padding(0, 15, 0, 8) };
+        var help = new LinkLabel { Text = "Open Intel Graphics Software", AutoSize = true, Margin = new Padding(0, 15, 0, 8) };
         help.LinkClicked += async (_, _) => await LaunchIntel();
         layout.Controls.Add(help);
-        var docs = new LinkLabel { Text = "Requisitos y ayuda oficial de Intel", AutoSize = true };
+        var docs = new LinkLabel { Text = "Intel requirements and official help", AutoSize = true };
         docs.LinkClicked += (_, _) => Process.Start(new ProcessStartInfo("https://www.intel.com/content/www/us/en/support/articles/000101789/graphics.html") { UseShellExecute = true });
         layout.Controls.Add(docs);
-        layout.Controls.Add(new Label { Text = "Enviar cambia la selección del panel de Intel. Revisa y confirma allí el ajuste y reinicia Windows. N₂O no confirma que el límite del controlador haya cambiado.", AutoSize = true, MaximumSize = new Size(450, 0), Margin = new Padding(0, 16, 0, 8) });
+        layout.Controls.Add(new Label { Text = "Send changes the selection in Intel’s panel. Review and confirm it there, then restart Windows. N₂O does not verify the active driver limit.", AutoSize = true, MaximumSize = new Size(450, 0), Margin = new Padding(0, 16, 0, 8) });
         Controls.Add(layout);
         slider.ValueChanged += (_, _) => UpdateValue();
         balanced.Click += (_, _) => slider.Value = 57;
@@ -103,7 +106,7 @@ internal sealed class MainForm : Form
             ramGB = root.GetProperty("RAM").GetDouble() / 1073741824;
             hardware.Text = $"{root.GetProperty("CPU").GetString()} · {ramGB:0.#} GiB RAM\n" + string.Join("\n", root.GetProperty("GPU").EnumerateArray().Select(g => $"{g.GetProperty("Name").GetString()} · Driver {g.GetProperty("DriverVersion").GetString()}"));
         }
-        catch (Exception e) { hardware.Text = "No se pudo consultar el hardware: " + e.Message; }
+        catch (Exception e) { hardware.Text = "Could not query hardware: " + e.Message; }
     }
     async Task Connect()
     {
@@ -117,7 +120,7 @@ internal sealed class MainForm : Form
             slider.Enabled = send.Enabled = true;
             balanced.Enabled = slider.Minimum <= 57 && slider.Maximum >= 57;
             UpdateValue();
-            status.Text = $"Control de Intel detectado: {control.Minimum:0.#}–{control.Maximum:0.#} %. Valor mostrado por Intel, no lectura del límite activo del kernel.";
+            status.Text = $"Intel control detected: {control.Minimum:0.#}–{control.Maximum:0.#} %. Value shown by Intel, not a reading of the active kernel limit.";
         }
         catch (Exception e) { Disconnect(); status.Text = e.Message; }
         finally { connect.Enabled = true; }
@@ -131,9 +134,9 @@ internal sealed class MainForm : Form
         try
         {
             await Task.Run(() => target.Set(requested));
-            status.Text = "Selección verificada en el panel de Intel. Confirma allí el ajuste y reinicia Windows para que tenga efecto.";
+            status.Text = "Selection verified in Intel’s panel. Confirm it there and restart Windows for it to take effect.";
         }
-        catch (Exception e) { Disconnect(); status.Text = "No se pudo verificar la selección: " + e.Message + " Vuelve a conectar con Intel."; }
+        catch (Exception e) { Disconnect(); status.Text = "Could not verify the selection: " + e.Message + " Connect to Intel again."; }
         finally { connect.Enabled = true; if (control is not null) send.Enabled = slider.Enabled = true; }
     }
     async Task LaunchIntel()
@@ -141,7 +144,7 @@ internal sealed class MainForm : Form
         try
         {
             var id = (await WindowsShell.PowerShell("Get-StartApps | Where-Object {$_.Name -eq 'Intel Graphics Software' -or $_.Name -eq 'Intel® Graphics Software'} | Select-Object -First 1 -ExpandProperty AppID")).Trim();
-            if (string.IsNullOrEmpty(id) || id.Contains('\n') || id.Contains('\r')) throw new InvalidOperationException("Abre Intel Graphics Software desde Inicio. Si no está instalado, utiliza el controlador y software oficiales de Intel o del fabricante del portátil.");
+            if (string.IsNullOrEmpty(id) || id.Contains('\n') || id.Contains('\r')) throw new InvalidOperationException("Open Intel Graphics Software from Start. If it is not installed, use the official driver and software from Intel or your laptop manufacturer.");
             var start = new ProcessStartInfo("explorer.exe");
             start.ArgumentList.Add("shell:AppsFolder\\" + id);
             Process.Start(start);
@@ -156,12 +159,12 @@ internal static class WindowsShell
     {
         var start = new ProcessStartInfo(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), @"WindowsPowerShell\v1.0\powershell.exe")) { UseShellExecute = false, CreateNoWindow = true, RedirectStandardOutput = true, RedirectStandardError = true };
         foreach (string arg in new[] { "-NoProfile", "-NonInteractive", "-Command", "[Console]::OutputEncoding=[System.Text.Encoding]::UTF8; " + script }) start.ArgumentList.Add(arg);
-        using var process = Process.Start(start) ?? throw new IOException("No se pudo iniciar PowerShell.");
+        using var process = Process.Start(start) ?? throw new IOException("Could not start PowerShell.");
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         try { await process.WaitForExitAsync(timeout.Token); }
-        catch (OperationCanceledException) { process.Kill(true); throw new IOException("La consulta a Windows ha tardado demasiado."); }
+        catch (OperationCanceledException) { process.Kill(true); throw new IOException("The Windows query timed out."); }
         if (process.ExitCode != 0) throw new IOException((await stderr).Trim());
         return await stdout;
     }
@@ -190,6 +193,7 @@ internal sealed class IntelControl
         foreach (AutomationElement window in windows)
         {
             if (!IsIntelProcess(window.Current.ProcessId)) continue;
+            // Keep the Spanish alias to recognize an externally localized Intel panel.
             var candidates = window.FindAll(TreeScope.Descendants, new AndCondition(
                 new PropertyCondition(AutomationElement.ControlTypeProperty, ControlType.Slider),
                 new OrCondition(new PropertyCondition(AutomationElement.NameProperty, "Shared GPU Memory Override"),
@@ -201,17 +205,17 @@ internal sealed class IntelControl
                 var state = pattern.Current;
                 // A 0..1 normalized slider or unnamed slider cannot safely be interpreted as percent.
                 if (state.IsReadOnly || state.Minimum < 0 || state.Maximum <= 1 || state.Maximum > 100 || state.Minimum >= state.Maximum || Math.Ceiling(state.Minimum) > Math.Floor(state.Maximum)) continue;
-                if (result is not null) throw new InvalidOperationException("Hay varios controles posibles. No se modificará ninguno.");
+                if (result is not null) throw new InvalidOperationException("Multiple matching controls found. None will be changed.");
                 result = new IntelControl(candidate, pattern);
             }
         }
-        return result ?? throw new InvalidOperationException("No se ha identificado un slider compatible. Abre Shared GPU Memory Override en Intel Graphics Software. Si tu versión no expone el control a Windows, ajusta el límite allí manualmente. No se ha realizado ningún cambio.");
+        return result ?? throw new InvalidOperationException("No compatible slider found. Open Shared GPU Memory Override in Intel Graphics Software. If your version does not expose the control to Windows, adjust the limit there manually. No changes were made.");
     }
     public void Set(int value)
     {
-        if (!IsIntelProcess(processId) || element.Current.ProcessId != processId || !element.Current.IsEnabled || element.Current.IsOffscreen) throw new InvalidOperationException("El panel de Intel ya no está disponible.");
+        if (!IsIntelProcess(processId) || element.Current.ProcessId != processId || !element.Current.IsEnabled || element.Current.IsOffscreen) throw new InvalidOperationException("Intel’s panel is no longer available.");
         if (value < Minimum || value > Maximum || pattern.Current.IsReadOnly) throw new ArgumentOutOfRangeException(nameof(value));
         pattern.SetValue(value);
-        if (Math.Abs(Value - value) > 0.01) throw new IOException("Intel no ha devuelto el valor solicitado.");
+        if (Math.Abs(Value - value) > 0.01) throw new IOException("Intel did not return the requested value.");
     }
 }

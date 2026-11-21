@@ -13,16 +13,17 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
 <plist version="1.0"><dict>
 <key>CFBundleExecutable</key><string>N2O</string>
 <key>CFBundleIdentifier</key><string>local.n2o.gpumemory</string>
+<key>CFBundleDevelopmentRegion</key><string>en</string>
 <key>CFBundleName</key><string>N2O</string>
 <key>CFBundleDisplayName</key><string>N₂O</string>
 <key>CFBundleIconFile</key><string>AppIcon</string>
 <key>CFBundlePackageType</key><string>APPL</string>
 <key>CFBundleShortVersionString</key><string>1.0</string>
-<key>CFBundleVersion</key><string>4</string>
+<key>CFBundleVersion</key><string>5</string>
 <key>LSUIElement</key><true/>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>NSHighResolutionCapable</key><true/>
 </dict></plist>
 PLIST
 codesign --force --sign - "$APP"
-printf 'App creada: %s\n' "$APP"
+printf 'App built: %s\n' "$APP"

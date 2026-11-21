@@ -1,161 +1,178 @@
 <div align="center">
 
-<img src="docs/assets/n2o-icon.png" width="144" alt="N₂O: botella de óxido nitroso en turquesa" />
+<img src="docs/assets/n2o-icon.png" width="144" alt="N₂O: a turquoise nitrous oxide bottle" />
 
 # N₂O
 
-### Tu memoria GPU. Un slider. El punto dulce.
+### Your GPU memory. One slider. The sweet spot.
 
-Una pequeña utilidad que vive junto al reloj y acerca los ajustes de memoria de la GPU a un clic.
+A small utility that lives next to your clock and puts GPU memory settings a click away.
 
-**SwiftUI en macOS · Bandeja del sistema en Windows · Sin servicios en segundo plano**
+**SwiftUI on macOS · System tray on Windows · No background services**
 
-[Empezar en macOS](#macos) · [Probar en Windows](#windows-experimental) · [Compilar](#compilar-desde-el-código) · [Preguntas frecuentes](#preguntas-frecuentes)
+[Get started on macOS](#macos) · [Try Windows](#windows--experimental) · [Build from source](#build-from-source) · [FAQ](#faq)
 
 </div>
 
 ---
 
-## De la terminal a la barra superior
+## From the terminal to the menu bar
 
-N₂O nació para poner este comando detrás de un slider:
+N₂O started with a simple idea: put this command behind a slider.
 
 ```sh
 sudo sysctl iogpu.wired_limit_mb=30720
 ```
 
-Abres la botella de la barra superior, eliges el límite y lo aplicas. El preset de **30.720 MB** queda a mano para volver al ajuste que motivó la app.
+Click the bottle in your menu bar, choose a limit, and apply it. The **30,720 MB** preset keeps the setting that inspired the app within easy reach.
 
-El nombre pone el nitro; el sistema operativo pone las reglas. N₂O ajusta el límite de memoria de la GPU. El resultado depende del equipo, del modelo o aplicación que ejecutes y del resto de la memoria en uso.
+The name brings the nitro; the operating system sets the rules. N₂O adjusts the GPU memory limit. Results depend on your hardware, the model or application you run, and the rest of your system’s memory usage.
 
-## Lo que te llevas
+## What you get
 
-- **Siempre a mano.** Icono de botella en la barra superior de macOS o en la bandeja de Windows.
-- **Un control directo.** Slider y acceso al preset, sin escribir comandos cada vez.
-- **Estado visible.** En Mac, lectura del valor actual y comprobación después de aplicar.
-- **Aspecto nativo.** Panel de Mac adaptado al modo claro y oscuro, sin ocupar espacio en el Dock.
-- **Dos implementaciones.** macOS cambia el ajuste del kernel; Windows conecta de forma experimental con el panel de Intel.
+- **Always within reach.** A bottle icon in the macOS menu bar or Windows system tray.
+- **Direct control.** A slider and preset access, without typing commands every time.
+- **Visible state.** On Mac, a current-value readout and verification after applying changes.
+- **Native appearance.** A Mac panel that follows light and dark mode without taking up Dock space.
+- **Two implementations.** macOS changes the kernel setting; Windows connects experimentally to Intel’s panel.
 
 ## macOS
 
-### Abrir y ajustar
+### Open and adjust
 
-Si ya tienes `N2O.app`, arrástrala a **Aplicaciones** y ábrela. Verás una pequeña **botella monocroma** en la barra superior.
+If you already have `N2O.app`, drag it to **Applications** and open it. A small **monochrome bottle** appears in your menu bar.
 
-1. Pulsa la botella para abrir el panel.
-2. Mueve el slider en pasos de **256 MB**, o selecciona **30.720 MB**.
-3. Pulsa **Aplicar límite** y autoriza el cambio en el diálogo de macOS.
-4. N₂O vuelve a leer el ajuste para comprobar el resultado.
+1. Click the bottle to open the panel.
+2. Move the slider in **256 MB** steps, or select **30,720 MB**.
+3. Click **Apply limit** and authorize the change in the macOS dialog.
+4. N₂O reads the setting again to verify the result.
 
-**Valor del sistema** selecciona `0`. Pulsa **Aplicar límite** para restaurarlo.
+**System default** selects `0`. Click **Apply limit** to restore it.
 
-### El punto dulce
+### Open at login
 
-El preset de **30.720 MB** corresponde al ajuste elegido para el Mac original de **36 GB de RAM**. Es un acceso rápido a esa configuración, no una recomendación universal.
+With N₂O installed in `/Applications`, run:
 
-El slider limita el máximo para dejar al menos **4 GiB fuera del límite configurado**. Eso no reserva memoria para otras apps ni garantiza RAM libre. Si el preset supera el máximo permitido en tu equipo, su botón queda desactivado.
+```sh
+bash scripts/enable-login.sh
+```
 
-### Qué ocurre al cerrar o reiniciar
+This installs a per-user LaunchAgent that opens the app when you log in, including after a restart. It does not apply the memory limit automatically.
 
-- Cerrar el panel deja la app en la barra. **Salir de N₂O** la cierra por completo.
-- La última selección aplicada se recuerda entre aperturas.
-- Abrir la app no aplica el ajuste automáticamente.
-- El cambio del kernel se pierde al reiniciar el Mac.
+To disable it:
 
-La interfaz requiere **macOS 14 o posterior**; el equipo también debe exponer `iogpu.wired_limit_mb`. Si no puede leer esa clave, N₂O muestra el error y desactiva la aplicación del cambio.
+```sh
+launchctl bootout "gui/$(id -u)/local.n2o.gpumemory"
+rm ~/Library/LaunchAgents/local.n2o.gpumemory.plist
+```
+
+### The sweet spot
+
+The **30,720 MB** preset is the setting chosen for the original Mac with **36 GB of RAM**. It is a shortcut to that configuration, not a universal recommendation.
+
+The slider caps the maximum to leave at least **4 GiB outside the configured limit**. This does not reserve memory for other apps or guarantee free RAM. If the preset exceeds your machine’s allowed maximum, its button is disabled.
+
+### Closing and restarting
+
+- Closing the panel keeps the app in the menu bar. **Quit N₂O** exits it completely.
+- The last successfully applied selection is remembered between launches.
+- Opening the app does not automatically apply a setting.
+- The kernel change resets when you restart your Mac.
+
+The interface requires **macOS 14 or later**; your system must also expose `iogpu.wired_limit_mb`. If that key cannot be read, N₂O displays the error and disables applying changes.
 
 ## Windows · Experimental
 
-La versión de Windows está pensada para explorar el ajuste de memoria compartida de las GPU integradas Intel, por ejemplo en un portátil con **Core Ultra 7 258V, Arc 140V y 32 GB de RAM**.
+The Windows version explores shared-memory settings on Intel integrated GPUs, for example a laptop with a **Core Ultra 7 258V, Arc 140V, and 32 GB of RAM**.
 
-> **Estado real:** compilación y empaquetado verificados desde macOS. La bandeja y la conexión con Intel aún necesitan validación en un equipo Windows compatible.
+> **Current status:** compilation and packaging verified from macOS. The tray interface and Intel connection still need validation on a compatible Windows machine.
 
-### Probarla
+### Try it
 
-1. Descomprime `N2O-Windows-x64.zip` y ejecuta `N2O.exe`. Incluye .NET.
-2. Abre **Intel Graphics Software** y entra en **Shared GPU Memory Override**.
-3. En N₂O, pulsa **Conectar con Intel**.
-4. Si detecta un único slider compatible, selecciona el porcentaje y pulsa **Enviar selección a Intel**.
-5. Revisa y confirma el ajuste en Intel. **Reinicia Windows** para que tenga efecto.
+1. Extract `N2O-Windows-x64.zip` and run `N2O.exe`. .NET is included.
+2. Open **Intel Graphics Software** and go to **Shared GPU Memory Override**.
+3. In N₂O, click **Connect to Intel**.
+4. If it finds one compatible slider, choose a percentage and click **Send selection to Intel**.
+5. Review and confirm the setting in Intel. **Restart Windows** for it to take effect.
 
-El icono puede estar dentro del menú de iconos ocultos junto al reloj. Cerrar la ventana oculta el panel; clic derecho sobre el icono → **Salir** termina la app.
+The icon may be inside the hidden-icons menu next to your clock. Closing the window hides the panel; right-click the icon → **Quit** exits the app.
 
-### Qué significa «experimental»
+### What “experimental” means
 
-N₂O utiliza la accesibilidad de Windows para localizar el slider de Intel. Si el control no tiene un nombre reconocido, no es editable o resulta ambiguo, lo deja deshabilitado. Puedes realizar el ajuste directamente en Intel Graphics Software.
+N₂O uses Windows accessibility to locate Intel’s slider. If the control has an unrecognized name, is not editable, or is ambiguous, N₂O leaves its slider disabled. You can adjust the setting directly in Intel Graphics Software instead.
 
-**Enviar selección a Intel verifica el valor del control de su interfaz; no verifica el límite activo del controlador.** El preset del Mac no se traslada a Windows. El botón **57 %** representa el valor predeterminado documentado por Intel, no un ajuste optimizado para todos los portátiles.
+**Send selection to Intel verifies the value of its UI control; it does not verify the active driver limit.** The Mac preset is not carried over to Windows. The **57%** button represents Intel’s documented default, not an optimized setting for every laptop.
 
-Consulta los [requisitos, límites y detalles de Windows](windows/README.md).
+See the [Windows requirements, limitations, and details](windows/README.md).
 
-## Compilar desde el código
+## Build from source
 
-### Mac · Xcode o Command Line Tools
+### Mac · Xcode or Command Line Tools
 
 ```sh
 bash scripts/build.sh
 open build/N2O.app
 ```
 
-Resultado: `build/N2O.app`, con su icono y firma ad hoc local.
+Output: `build/N2O.app`, including its icon and a local ad hoc signature.
 
-### Windows x64 · SDK .NET 10
+### Windows x64 · .NET 10 SDK
 
-Desde macOS o un entorno con Bash, Python 3 y .NET 10:
+From macOS or an environment with Bash, Python 3, and .NET 10:
 
 ```sh
 bash scripts/build-windows.sh
 ```
 
-Resultados:
+Outputs:
 
-- `build/windows-x64/N2O.exe`: ejecutable con runtime incluido.
-- `build/N2O-Windows-x64.zip`: paquete portable con instrucciones.
+- `build/windows-x64/N2O.exe`: executable with the runtime included.
+- `build/N2O-Windows-x64.zip`: portable package with instructions.
 
-Para compilar directamente desde Windows con .NET:
+To publish directly from Windows with .NET:
 
 ```powershell
 dotnet publish windows/N2O.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o build/windows-x64
 ```
 
-El ejecutable Windows local no lleva firma Authenticode. Los artefactos de `build/` se generan localmente y no se incluyen en el repositorio.
+The local Windows executable has no Authenticode signature. Artifacts in `build/` are generated locally and are not included in the repository.
 
-## Por dentro
+## Under the hood
 
 ```text
-Sources/N2O.swift            App macOS: panel, barra y acceso a sysctl
-windows/Program.cs          App Windows: bandeja, hardware y conexión con Intel
-windows/Assets/AppIcon.ico  Icono de Windows
-scripts/make-icon.swift     Generador del icono de botella
-scripts/build.sh            Compilación y empaquetado de macOS
-scripts/build-windows.sh    Publicación de Windows y ZIP portable
+Sources/N2O.swift           macOS app: panel, menu bar, and sysctl access
+windows/Program.cs         Windows app: tray, hardware, and Intel connection
+windows/Assets/AppIcon.ico Windows icon
+scripts/make-icon.swift    Bottle icon generator
+scripts/build.sh           macOS build and packaging
+scripts/build-windows.sh   Windows publishing and portable ZIP
 ```
 
-En Mac, el único comando con privilegios es `/usr/sbin/sysctl -w iogpu.wired_limit_mb=N`, con un entero validado. macOS gestiona la autorización; N₂O no guarda contraseñas ni instala un servicio privilegiado.
+On Mac, the only privileged command is `/usr/sbin/sysctl -w iogpu.wired_limit_mb=N`, with a validated integer. macOS handles authorization; N₂O does not store passwords or install a privileged service.
 
-En Windows, la app consulta el hardware y conecta con el control visible de Intel. No escribe claves de registro no documentadas ni instala un controlador propio.
+On Windows, the app queries hardware and connects to Intel’s visible control. It does not write undocumented registry keys or install its own driver.
 
-## Preguntas frecuentes
+## FAQ
 
-**¿Esto convierte RAM en VRAM dedicada?**  
-Ajusta un límite de uso de memoria. No añade memoria física ni cambia la arquitectura del equipo.
+**Does this turn RAM into dedicated VRAM?**  
+It adjusts a memory usage limit. It does not add physical memory or change your machine’s architecture.
 
-**¿Más memoria significa más velocidad?**  
-No necesariamente. El objetivo es permitir un límite adecuado para tu carga; el rendimiento también depende de la GPU, del software y de la presión de memoria del sistema.
+**Does more memory mean more speed?**  
+Not necessarily. The goal is to allow a suitable limit for your workload; performance also depends on the GPU, software, and system memory pressure.
 
-**¿Por qué Windows requiere Intel abierto?**  
-Esta versión conecta con su interfaz. No implementa un equivalente de `sysctl` ni dispone de una integración directa verificada con el controlador.
+**Why does Windows need Intel’s app open?**  
+This version connects to its interface. It does not implement a `sysctl` equivalent or have a verified direct driver integration.
 
-**¿Se inicia al encender el equipo?**  
-La app no configura el inicio automático ni aplica presets al arrancar.
+**Does it launch at startup?**  
+On Mac, run `bash scripts/enable-login.sh` to enable opening at login. Windows startup is not configured. Neither version applies presets automatically at boot.
 
-**¿Cómo vuelvo atrás en Mac?**  
-Selecciona **Valor del sistema** y pulsa **Aplicar límite**. También se restablece al reiniciar.
+**How do I undo a change on Mac?**  
+Select **System default** and click **Apply limit**. Restarting also resets the setting.
 
-## Referencias
+## References
 
-- [MLX: límite wired y ajuste del sistema en macOS](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.set_wired_limit.html).
-- [Intel: Shared GPU Memory Override y requisitos](https://www.intel.com/content/www/us/en/support/articles/000101789/graphics.html).
+- [MLX: wired limits and the macOS system setting](https://ml-explore.github.io/mlx/build/html/python/_autosummary/mlx.core.set_wired_limit.html).
+- [Intel: Shared GPU Memory Override and requirements](https://www.intel.com/content/www/us/en/support/articles/000101789/graphics.html).
 - [Intel Graphics Control Library](https://github.com/intel/drivers.gpu.control-library).
 - [Microsoft: RangeValuePattern.SetValue](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.rangevaluepattern.setvalue).
 
@@ -163,6 +180,6 @@ Selecciona **Valor del sistema** y pulsa **Aplicar límite**. También se restab
 
 <div align="center">
 
-**N₂O — encuentra tu punto dulce.**
+**N₂O — find your sweet spot.**
 
 </div>

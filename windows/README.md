@@ -1,36 +1,40 @@
-# N₂O para Windows · versión experimental
+# N₂O for Windows · Experimental
 
-App de bandeja para Windows 11 x64. Mantiene la versión macOS independiente.
+A system tray app for Windows 11 x64. The macOS implementation remains independent.
 
-## Ejecutar
+## Run
 
-Descomprime `N2O-Windows-x64.zip` en una carpeta y ejecuta `N2O.exe`. Incluye el runtime de .NET; no requiere instalar un SDK. El icono de botella aparece junto al reloj, posiblemente dentro del menú de iconos ocultos. Cerrar el panel lo oculta; clic derecho en el icono → Salir termina la app. No se inicia automáticamente con Windows.
+Extract `N2O-Windows-x64.zip` to a folder and run `N2O.exe`. The .NET runtime is included; no SDK installation is needed. The bottle icon appears next to your clock, possibly inside the hidden-icons menu. Closing the panel hides it; right-click the icon → Quit exits the app. It does not start automatically with Windows.
 
-## Ajustar el límite
+## Adjust the limit
 
-1. Abre Intel Graphics Software y busca **Shared GPU Memory Override**. La app incluye un acceso para abrir Intel si está registrado con ese nombre en Inicio.
-2. Pulsa **Conectar con Intel**. N₂O solo habilita el slider si encuentra un único control visible y editable con ese nombre exacto, dentro del proceso IntelGraphicsSoftware, y un rango porcentual compatible.
-3. Selecciona un porcentaje permitido. **57 %** es la referencia predeterminada documentada por Intel, no una recomendación optimizada para todos los equipos. La estimación en GiB se calcula a partir de la RAM física detectada.
-4. Pulsa **Enviar selección a Intel**. N₂O cambia y vuelve a leer el valor del control, pero **no confirma que haya cambiado el límite activo del controlador**.
-5. Revisa y confirma el ajuste dentro del software de Intel. Reinicia Windows para que tenga efecto.
+1. Open Intel Graphics Software and find **Shared GPU Memory Override**. N₂O includes a link to launch Intel if it is registered under that name in Start.
+2. Click **Connect to Intel**. N₂O only enables its slider when it finds a single visible, editable control with a recognized exact name, inside the IntelGraphicsSoftware process, with a compatible percentage range.
+3. Select an allowed percentage. **57%** is Intel’s documented default, not an optimized recommendation for every machine. The GiB estimate is calculated from detected physical RAM.
+4. Click **Send selection to Intel**. N₂O changes and reads back the UI control’s value, but **does not verify that the active driver limit has changed**.
+5. Review and confirm the setting in Intel’s software. Restart Windows for it to take effect.
 
-Si Intel no expone el control a UI Automation con el nombre reconocido, el slider permanece deshabilitado. Usa el ajuste directamente en Intel. Esta integración es experimental y necesita validación en un equipo real, por ejemplo un Core Ultra 7 258V con Arc 140V y 32 GB. No se ha probado en ese hardware desde el Mac de desarrollo.
+If Intel does not expose the control through UI Automation under a recognized name, the slider stays disabled. Adjust the setting directly in Intel instead. This integration is experimental and needs validation on real hardware, such as a Core Ultra 7 258V with Arc 140V and 32 GB of RAM. It has not been tested on that hardware from the development Mac.
 
-## Requisitos y límites
+## Requirements and limitations
 
-Intel documenta Core Ultra Series 2 o posterior, al menos 10 GB de RAM, Intel Graphics Software 25.26.1602.2 y controlador 32.0.101.6974 o posteriores. El porcentaje máximo depende de la RAM y del controlador. N₂O utiliza únicamente el rango expuesto por el control: no replica el preset de 30.720 MB del Mac ni escribe claves de registro no documentadas.
+Intel documents Core Ultra Series 2 or later, at least 10 GB of RAM, Intel Graphics Software 25.26.1602.2, and graphics driver 32.0.101.6974 or later. The maximum percentage depends on RAM and the driver. N₂O only uses the range exposed by the control: it does not replicate the Mac’s 30,720 MB preset or write undocumented registry keys.
 
-La detección muestra CPU, RAM y versiones de controladores; no equivale a certificar compatibilidad. La memoria libre, el presupuesto de memoria de una aplicación y el límite de GPU son conceptos distintos. El porcentaje mostrado es la selección del panel de Intel, no una lectura del límite del kernel.
+Hardware detection shows CPU, RAM, and driver versions; it does not certify compatibility. Free memory, an application’s memory budget, and the GPU limit are different concepts. The displayed percentage is Intel’s panel selection, not a reading of the kernel limit.
 
-## Compilar
+N₂O’s interface is in English. A Spanish control-name alias is retained internally to recognize an externally localized Intel panel.
 
-Con SDK .NET 10, incluso desde macOS:
+## Build
+
+With the .NET 10 SDK, including from macOS:
 
 ```sh
 dotnet build windows/N2O.Windows.csproj -c Release
 dotnet publish windows/N2O.Windows.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o build/windows-x64
 ```
 
-El ejecutable local no lleva firma Authenticode. La compilación desde macOS verifica tipos y empaquetado; la interacción con Intel y la interfaz de bandeja requieren pruebas en Windows.
+To also create the portable ZIP, run `bash scripts/build-windows.sh` from the repository root. This requires Bash and Python 3.
 
-Referencias: [requisitos de Intel](https://www.intel.com/content/www/us/en/support/articles/000101789/graphics.html), [API pública IGCL](https://github.com/intel/drivers.gpu.control-library), [RangeValuePattern de Microsoft](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.rangevaluepattern.setvalue).
+The local executable has no Authenticode signature. Building from macOS checks types and packaging; interaction with Intel and the tray interface require testing on Windows.
+
+References: [Intel requirements](https://www.intel.com/content/www/us/en/support/articles/000101789/graphics.html), [public IGCL API](https://github.com/intel/drivers.gpu.control-library), [Microsoft RangeValuePattern](https://learn.microsoft.com/en-us/dotnet/api/system.windows.automation.rangevaluepattern.setvalue).
