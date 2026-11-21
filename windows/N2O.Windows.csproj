@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <UseWPF>true</UseWPF>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationIcon>Assets/AppIcon.ico</ApplicationIcon>
+    <AssemblyName>N2O</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup><EmbeddedResource Include="Assets/AppIcon.ico" /></ItemGroup>
+</Project>
